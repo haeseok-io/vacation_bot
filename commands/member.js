@@ -13,7 +13,7 @@ module.exports = {
         .setDescription('현재 클랜원 정보를 알려줘요!'),
     async execute(interaction){
         // 데이터 가져오기
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({headless: "new"});
         const page = await browser.newPage();
 
         await page.goto(crolling_obj.href);
@@ -70,12 +70,7 @@ module.exports = {
                 {name: '🌵 클랜원 상세정보', value: data_list}
             );
 
-
-
-        // embed_obj.addFields({name: '클랜원 목록', value: result});
-
         // 발송
-        // await interaction.reply('유동우(김동우)는 병신이다!!!!');
         await interaction.reply({embeds: [embed_obj]});
     }
 };
