@@ -24,24 +24,31 @@ for(const file of commandFiles){
 }
 
 client.on(Events.InteractionCreate, async interaction => {
-    if( !interaction.isChatInputCommand() ) return;
+    // 슬래시 커맨드
+    if( interaction.isChatInputCommand() ){
+        // 커맨드명
+        const command = interaction.client.commands.get(interaction.commandName);
+        if( !command ){
+            console.log(`${interaction.commandName} 로 매칭되는 명령어가 없습니다.`);
+            return;
+        }
 
-    const command = interaction.client.commands.get(interaction.commandName);
-    if( !command ){
-        console.log(`${interaction.commandName} 로 매칭되는 명령어가 없습니다.`);
-        return;
+        // 실행
+        try {
+            await command.execute(interaction);
+        } catch(error) {
+            console.log(error);
+            if( interaction.replied || interaction.deferred ) {
+                await interaction.followUp({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true});
+            } else {
+                await interaction.reply({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true})
+            }
+        }
     }
 
-    try {
-        await command.execute(interaction);
-    } catch(error) {
-        console.log(error);
-
-        if( interaction.replied || interaction.deferred ) {
-            await interaction.followUp({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true});
-        } else {
-            await interaction.reply({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true})
-        }
+    // 버튼 상호작용
+    if( interaction.isButton() ){
+        interaction.reply(`${interaction.customId} 버튼 클릭함!`);
     }
 });
 

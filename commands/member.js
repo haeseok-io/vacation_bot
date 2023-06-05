@@ -13,6 +13,7 @@ module.exports = {
         .setDescription('현재 클랜원 정보를 알려줘요!'),
     async execute(interaction){
         // 데이터 가져오기
+        const start = console.time();
         const browser = await puppeteer.launch({headless: "new"});
         const page = await browser.newPage();
 
@@ -71,6 +72,7 @@ module.exports = {
             );
 
         // 발송
+        const end = console.timeEnd();
         await interaction.reply({embeds: [embed_obj]});
     }
 };
