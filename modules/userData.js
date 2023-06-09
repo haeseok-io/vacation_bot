@@ -1,53 +1,59 @@
-const axios = require('axios');
-const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
+const { axiosCrolling } = require('./crollring');
 
 // --------------------------------------------------------------
 //  # 유저 정보
 // --------------------------------------------------------------
 const userData = async username => {
     // Val
-    const result = {error: '', data: {id: '', name: ''}};
-    let match_stat = false;
+    let search_stat = false;
+    const result = {error: 0, data: {}};
 
-    // Check
-    if( !username ){
-        result.error = "전달받은 유저명이 않습니다.";
+    // Data
+    const croll_url = `https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch=${username}`;
+    const croll_data = await axiosCrolling(croll_url);
+
+    if( croll_data.error ){
+        result.error = croll_data.error;
         return result;
     }
 
-    // Data
-    // - 통합검색 페이지 크롤링
-    const url = "https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch="+username;
-    const response = await axios.get(url);
-    const html = response.data;
+    // Process
+    const $ = cheerio.load(croll_data.data);
+    $(".boardList .relative table tbody tr").each((dex, element)=>{
+        const $list = $(element);
+        const $item = $list.children('td');
 
-    // - 데이터 가공
-    const $ = cheerio.load(html);
-    $(".relative table tbody tr").each(function(dex, element){
-        const $item = $(element);
-        const match_name = $item.find('td').eq(2).find('a>b').text();
+        // 동일한 닉네임인지 체크
+        const search_name = $item.eq(2).find('a>b').text();
 
-        if( username===match_name ){
-            let match_user_data = [];
-            const match_regex = /'([^']*)'/g;
-            const match_user_info = $item.find('td').eq(2).find('a').attr('onclick');
+        // 데이터 가공
+        if( username===search_name ){
+            // 고유 ID
+            let user_id             = $item.eq(2).find('a').attr('onclick');
+            user_id                 = user_id.match(/GetUserInfo\('user','([^']+)'/)[1].trim();
 
-            while(match_user_item = match_regex.exec(match_user_info)){
-                match_user_data.push(match_user_item[1]);
-            }
+            // 클랜 ID
+            const clan_info         = $item.eq(6).find('a').attr('onclick');
+            const clan_id           = clan_info.match(/GetClanInfo\('clan','([^']+)'/)[1].trim();
 
-            result.data.id = match_user_data[1];
-            result.data.name = match_name;
-
-            match_stat = true;
+            // 데이터 담기
+            search_stat             = true;
+            result.data.id          = user_id;
+            result.data.rank        = $item.eq(0).find('b').text().trim();
+            result.data.name        = $item.eq(2).find('a>b').text().trim();
+            result.data.class_img   = $item.eq(2).find('span>img').attr('src');
+            result.data.odd         = $item.eq(3).text().trim();
+            result.data.kda         = $item.eq(4).text().trim();
+            result.data.record      = $item.eq(5).text().trim();
+            result.data.clan_id     = clan_id;
+            result.data.clan_name   = $item.eq(6).find('a>b').text().trim();
+            result.data.clan_cert   = $item.eq(6).find('a>b').find('img').attr('src');
         }
     });
 
-    // Etc
-    // - 매칭된 닉네임이 없을경우
-    if( !match_stat ){
-        result.error = "통합검색에서 검색되지 않습니다.";
+    if( !search_stat ){
+        result.error = "입력하신 닉네임은 통합검색에서 검색되지 않습니다.";
         return result;
     }
 

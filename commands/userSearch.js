@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const cheerio = require('cheerio');
-const { axiosCrolling } = require('../modules/crollring');
+const { userData } = require("../modules/userData");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,90 +12,68 @@ module.exports = {
     async execute(interaction){
         // Val
         const user_name = interaction.options.getString('유저명');
-        const user_data = {id: '', name: '', rank: '', class: '', clan: '', record: '', odds: '', kill: ''};
-
-        // Check
-        if( !user_name ){
-            await interaction.reply(`검색된 유저명이 없습니다. ( /유저검색 유저명 )`);
-            return false;
-        }
 
         // Data
-        const get_url = `https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch=${user_name}`;
-        const get_data = await axiosCrolling(get_url);
-
-        // Process
-        const $ = cheerio.load(get_data.data);
-        $(".boardList .relative table tbody tr").each((dex, element)=>{
-            const $data = $(element);
-            const $item = $data.find('td');
-
-            // 조회된 유저명
-            const match_name = $item.eq(2).find('a>b').text();
-
-            // 조회된 유저명이 검색한 닉네임과 일치하는 경우
-            if( user_name===match_name ){
-                // 고유ID 추출
-                const match_user_data = [];
-                const match_user_regex = /'([^']*)'/g;
-                const match_user_info = $item.eq(2).find('a').attr('onclick');
-
-                while( match_user_item = match_user_regex.exec(match_user_info) ){
-                    match_user_data.push(match_user_item[1]);
-                }
-
-                // 가공
-                user_data.id = match_user_data[1];
-                user_data.name = match_name;
-                user_data.rank = $item.eq(0).find('b').text();
-                user_data.class = $item.eq(2).find('span>img').attr('src');
-                user_data.odds = $item.eq(3).text();
-                user_data.kill = $item.eq(4).text();
-                user_data.record = $item.eq(5).text();
-                user_data.clan = $item.eq(6).find('a>b').text();
-            }
-        });
-
-        if( !user_data.id ){
-            await interaction.reply(`검색하신 닉네임으로 조회되는 정보가 없습니다.`);
-            return false;
+        const get_data = await userData(user_name);
+        if( get_data.error ){
+            interaction.reply(get_data.error);
+            return;
         }
 
-        user_data.clan = user_data.clan ? user_data.clan : '-';
+        const user_data = get_data.data;
 
         // Etc
-        // - button 생성
-        const userTrendBtn = new ButtonBuilder()
-            .setCustomId('userTrendData')
-            .setLabel('최근동향')
-            .setStyle(ButtonStyle.Primary);
-        const userMatchBtn = new ButtonBuilder()
-            .setCustomId('userMatchData')
-            .setLabel('매치기록')
-            .setStyle(ButtonStyle.Primary);
-        const userBtn = new ActionRowBuilder()
-            .addComponents(userTrendBtn, userMatchBtn);
+        // - Embed
+        const embed_obj = new EmbedBuilder();
+        embed_obj.setColor(0x0099FF);
+        embed_obj.setTitle(`${user_data.name}`);
+        embed_obj.setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`);
+        embed_obj.setThumbnail(user_data.class_img);
+        embed_obj.setFooter({text: `통합검색 페이지에서 조회되는 내용 입니다.`});
+        embed_obj.addFields(
+            {name: '랭킹', value: user_data.rank},
+            {name: '전적', value: user_data.record},
+            {name: '승률', value: user_data.odd, inline: true},
+            {name: 'kda', value: user_data.kda, inline: true}
+        );
 
-        // - embed 생성
-        const embed_obj = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setTitle(`${user_data.name} (${user_data.id})`)
-            .setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`)
-            .setThumbnail(user_data.class)
-            .addFields(
-                {name: '랭킹', value: user_data.rank},
-                {name: '소속클랜', value: user_data.clan},
-                {name: '전적', value: user_data.record},
-                {name: '승률', value: user_data.odds, inline: true},
-                {name: '킬데스', value: user_data.kill, inline: true},
-            );
+        // -- 클랜 노출
+        if( user_data.clan_name || user_data.clan_cert ){
+            const clan_obj = {};
+            if( user_data.clan_name ) clan_obj.name = user_data.clan_name;
+            if( user_data.clan_cert ) clan_obj.iconURL = user_data.clan_cert;
 
+            embed_obj.setAuthor(clan_obj);
+        }
 
+        // - Button
+        // -- 최근동향
+        const btn_trend = new ButtonBuilder({
+            style: ButtonStyle.Secondary,
+            label: ' 최근동향',
+            custom_id: 'userTrend',
+            emoji: '🎯'
+        });
+
+        const btn_match = new ButtonBuilder({
+            style: ButtonStyle.Secondary,
+            label: ' 최근매치',
+            custom_id: 'userMatch',
+            emoji: '🎮'
+        });
+
+        // -- 병영보기
+        const btn_link = new ButtonBuilder({
+            style: ButtonStyle.Link,
+            label: '병영보기',
+            url: `https://barracks.sa.nexon.com/${user_data.id}/match`
+        });
+    
+        // -- 버튼 컴포넌트 생성
+        const btn_component = new ActionRowBuilder()
+            .addComponents(btn_trend,btn_match,btn_link);
 
         // Result
-        await interaction.reply({
-            embeds: [embed_obj],
-            components: [userBtn]
-        });
+        await interaction.reply({embeds: [embed_obj], components: [btn_component]});
     }
 };
