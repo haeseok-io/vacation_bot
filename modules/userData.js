@@ -1,5 +1,5 @@
 const cheerio = require('cheerio');
-const { axiosCrolling } = require('./crollring');
+const { axiosCrolling, playwrightCrolling } = require('./crollring');
 
 // --------------------------------------------------------------
 //  # 유저 정보
@@ -62,65 +62,97 @@ const userData = async username => {
 }
 
 // --------------------------------------------------------------
-//  # 유저 매치정보
+//  # 유저 병영 정보
 // --------------------------------------------------------------
-const userMatchData = async (username, type) => {
+const userBarracksData = async userid => {
     // Val
-    const result = {error: '', data: []};
+    const result = {error: 0, data: {}};
 
     // Check
-    if( !username ){
-        result.error = "전달받은 유저ID가 없습니다.";
+    if( !userid ){
+        result.error = "전달 데이터 오류입니다.";
         return result;
     }
 
+    // Data
+    const croll_url = `https://barracks.sa.nexon.com/${userid}/match`;
+    const croll_data = await playwrightCrolling(croll_url);
+    if( !croll_data.data ){
+        result.error = "유저정보를 가져오는데 실패했습니다.";
+        return result;
+    }
+
+    // Process
+    const resource = croll_data.data;
+
+    // ... 최근동향
+    const summaries_data = userTrendData(resource);
+
+    // ... 최근매치
+    const match_data = userMatchData(resource);
+
+    // Result
+    result.data.summaries = summaries_data;
+    result.data.match = match_data;
+    return result;
+}
+
+// --------------------------------------------------------------
+//  # 유저 최근동향
+// --------------------------------------------------------------
+const userTrendData = resource => {
+    // Val
+    const result = {};
 
     // Data
-    const url = `https://barracks.sa.nexon.com/${user_data.data.id}/match`;
-    const browser = await puppeteer.launch({headless: true});
-    const page = await browser.newPage();
+    const $ = cheerio.load(resource);
+    const $summaries = $(".summaries").find("p.name").next('ul');
+    const $summaries_child = $summaries.find(".child");
 
-    await page.setRequestInterception(true);
-    page.on('request', (req)=>{
-        if( req.isInterceptResolutionHandled() )    return;
+    // Process
+    result.odd = $summaries.children("li").eq(0).children(".value").text().trim();
+    result.kda = $summaries.children("li").eq(1).children(".value").text().trim();
+    result.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
+    result.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
 
-        if( req.url().endsWith('.png') || req.url().endsWith('.jpg') )      req.abort();
-        else if( req.resourceType()=='image' || req.resourceType()=='xhr' ) req.abort();
-        else                                                                req.continue();
+    // Result
+    return result;
+}
+
+// --------------------------------------------------------------
+//  # 유저 최근매치
+// --------------------------------------------------------------
+const userMatchData = resource => {
+    // Val
+    const result = [];
+
+    // Data
+    const $ = cheerio.load(resource);
+
+    // Process
+    $(".histories .history").each((dex, element)=>{
+        const obj = {};
+        const $list = $(element);
+        const $item = $list.find("ul");
+
+        // 데이터 가공
+        obj.date = $item.find("li").eq(0).text().trim();
+        obj.map = $item.find("li").eq(1).text().trim();
+        obj.type = $item.find("li").eq(2).find(".mode").text().trim();
+        obj.stat = $item.find("li").eq(3).find(".result").text().trim();
+        obj.kill = $item.find("li").eq(4).find(".value").text().trim();
+        obj.death = $item.find("li").eq(5).find(".value").text().trim();
+        obj.head = $item.find("li").eq(6).find(".value").text().trim();
+        obj.damage = $item.find("li").eq(7).find(".value").text().trim();
+        obj.assist = $item.find("li").eq(8).find(".value").text().trim();
+
+        // 배열담기
+        result.push(obj);
     });
 
-    await page.goto(url, {cache: 'force-cache'});
-    const content = await page.content();
-
-    await page.close();
-    await browser.close();
-
-
-    console.log(content);
-    return false;
-
-
-    // - 병영수첩 페이지 크롤링 
-    // const url = `https://barracks.sa.nexon.com/${userid}/match`;
-    // const browser = await puppeteer.launch({headless: "new"});
-    // const page = await browser.newPage();
-
-    // await page.goto(url);
-    // const content = await page.content();
-
-    // await page.close();
-    // await browser.close();
-
-    // - 데이터 가공
-    // const $ = cheerio.load(content);
-
-    
     // Result
-    return content;
+    return result;
 }
 
 
-module.exports = {
-    userData,
-    userMatchData
-};
+module.exports = {userData, userBarracksData};
