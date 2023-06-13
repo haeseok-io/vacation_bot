@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, Embed } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { userData, userBarracksData } = require("../modules/userData");
 
 module.exports = {
@@ -46,19 +46,41 @@ module.exports = {
         // --------------------------------------------------------------
         // 유저정보 Embed
         const user_embed = new EmbedBuilder();
-        user_embed.setColor('#ffffff');
-        user_embed.setTitle(user_data.name);
+        user_embed.setColor(0x0099FF);
+        user_embed.setTitle(`${user_data.name}`);
         user_embed.setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`);
+        user_embed.setThumbnail(user_data.class_img);
+        user_embed.setFooter({text: `통합검색 페이지에서 조회되는 내용 입니다.`});
+        user_embed.addFields(
+            {name: '랭킹', value: user_data.rank},
+            {name: '전적', value: user_data.record},
+            {name: '승률', value: user_data.odd, inline: true},
+            {name: 'kda', value: user_data.kda, inline: true}
+        );
 
-        // 최근동향 Embed
-        const trend_embed = new EmbedBuilder();
-        trend_embed.setColor('#ff0000');
-        trend_embed.setTitle('최근동향');
-        
+        if( user_data.clan_name || user_data.clan_cert ){
+            const clan_obj = {};
+            if( user_data.clan_name ) clan_obj.name = user_data.clan_name;
+            if( user_data.clan_cert ) clan_obj.iconURL = user_data.clan_cert;
+
+            user_embed.setAuthor(clan_obj);
+        }
 
         // --------------------------------------------------------------
         //  # Etc
         // --------------------------------------------------------------
+        // 최근동향 버튼
+        const btn_trend = new ButtonBuilder({
+            style: ButtonStyle.Secondary,
+            label: ' 최근동향',
+            custom_id: 'userTrend',
+            emoji: '🎯'
+        });
+
+
+        // 컴포넌트 생성
+        const btn_component = new ActionRowBuilder()
+            .addComponents(btn_trend);
 
         // --------------------------------------------------------------
         //  # Result
@@ -70,7 +92,7 @@ module.exports = {
 
 
         // Result
-        await interaction.editReply({content: '조회성공', embeds: [user_embed, trend_embed]});
+        await interaction.editReply({content: '', embeds: [user_embed], components: [btn_component]});
 
 
         // Etc

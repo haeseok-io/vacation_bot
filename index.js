@@ -37,7 +37,6 @@ client.on(Events.InteractionCreate, async interaction => {
         try {
             await command.execute(interaction);
         } catch(error) {
-            console.log(error);
             if( interaction.replied || interaction.deferred ) {
                 await interaction.followUp({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true});
             } else {
@@ -48,6 +47,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
     // 버튼 상호작용
     if( interaction.isButton() ){
+        console.log(interaction.client)
         interaction.reply(`${interaction.customId} 버튼 클릭함!`);
     }
 });
