@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { userData, userBarracksData } = require("../modules/userData");
+const userData = require("../modules/userData");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,12 +34,14 @@ module.exports = {
         await interaction.editReply(`${user_name} 유저에 대한 정보를 조회하는 중 입니다...`);
 
         // 유저정보
-        const user_rs = await userData(user_name);
-        const user_data = user_rs.data;
-        if( user_rs.error ){
-            interaction.editReply(user_rs.error);
+        const user_info = await userData.userInfo(user_name);
+        const user_data = user_info.data;
+        if( user_info.error ){
+            interaction.editReply(user_info.error);
             return;
         }
+        
+        interaction.client.userData.set(interaction.id, {id: user_data.id, name: user_data.name});
 
         // --------------------------------------------------------------
         //  # Process
@@ -50,19 +52,19 @@ module.exports = {
         user_embed.setTitle(`${user_data.name}`);
         user_embed.setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`);
         user_embed.setThumbnail(user_data.class_img);
-        user_embed.setFooter({text: `통합검색 페이지에서 조회되는 내용 입니다.`});
+        user_embed.setFooter({text: `서든어택 공식 홈페이지에서 조회되는 데이터 입니다.\n\n📌 해당 메세지는 xx분 뒤 자동으로 지워집니다. 📌`});
         user_embed.addFields(
+            {name: '\u2009', value: '\u2009'},
             {name: '랭킹', value: user_data.rank},
             {name: '전적', value: user_data.record},
             {name: '승률', value: user_data.odd, inline: true},
-            {name: 'kda', value: user_data.kda, inline: true}
+            {name: 'kda', value: user_data.kda, inline: true},
+            {name: '\u2009', value: '\u2009'},
         );
 
         if( user_data.clan_name || user_data.clan_cert ){
-            const clan_obj = {};
-            if( user_data.clan_name ) clan_obj.name = user_data.clan_name;
-            if( user_data.clan_cert ) clan_obj.iconURL = user_data.clan_cert;
-
+            const clan_obj = {name: user_data.clan_name};
+            if( user_data.clan_cert )   clan_obj.iconURL = user_data.clan_cert;
             user_embed.setAuthor(clan_obj);
         }
 
@@ -72,9 +74,9 @@ module.exports = {
         // 최근동향 버튼
         const btn_trend = new ButtonBuilder({
             style: ButtonStyle.Secondary,
-            label: ' 최근동향',
+            label: '최근동향',
             custom_id: 'userTrend',
-            emoji: '🎯'
+            emoji: '🎯',
         });
 
 
@@ -85,68 +87,17 @@ module.exports = {
         // --------------------------------------------------------------
         //  # Result
         // --------------------------------------------------------------
+        const send_msg = await interaction.editReply({content: '', embeds: [user_embed], components: [btn_component]});
         
-        // 최근동향 데이터
-        // const trend_data = await userBarracksData(user_data.data.id);
-        // console.log(trend_data.data);
+        setTimeout(async () => {
+            try {
+                await send_msg.delete();
+                interaction.client.userData.delete(interaction.id);
 
-
-        // Result
-        await interaction.editReply({content: '', embeds: [user_embed], components: [btn_component]});
-
-
-        // Etc
-        // - Embed
-        // const embed_obj = new EmbedBuilder();
-        // embed_obj.setColor(0x0099FF);
-        // embed_obj.setTitle(`${user_data.name}`);
-        // embed_obj.setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`);
-        // embed_obj.setThumbnail(user_data.class_img);
-        // embed_obj.setFooter({text: `통합검색 페이지에서 조회되는 내용 입니다.`});
-        // embed_obj.addFields(
-        //     {name: '랭킹', value: user_data.rank},
-        //     {name: '전적', value: user_data.record},
-        //     {name: '승률', value: user_data.odd, inline: true},
-        //     {name: 'kda', value: user_data.kda, inline: true}
-        // );
-
-        // -- 클랜 노출
-        // if( user_data.clan_name || user_data.clan_cert ){
-        //     const clan_obj = {};
-        //     if( user_data.clan_name ) clan_obj.name = user_data.clan_name;
-        //     if( user_data.clan_cert ) clan_obj.iconURL = user_data.clan_cert;
-
-        //     embed_obj.setAuthor(clan_obj);
-        // }
-
-        // - Button
-        // -- 최근동향
-        // const btn_trend = new ButtonBuilder({
-        //     style: ButtonStyle.Secondary,
-        //     label: ' 최근동향',
-        //     custom_id: 'userTrend',
-        //     emoji: '🎯'
-        // });
-
-        // const btn_match = new ButtonBuilder({
-        //     style: ButtonStyle.Secondary,
-        //     label: ' 최근매치',
-        //     custom_id: 'userMatch',
-        //     emoji: '🎮'
-        // });
-
-        // // -- 병영보기
-        // const btn_link = new ButtonBuilder({
-        //     style: ButtonStyle.Link,
-        //     label: '병영보기',
-        //     url: `https://barracks.sa.nexon.com/${user_data.id}/match`
-        // });
-    
-        // // -- 버튼 컴포넌트 생성
-        // const btn_component = new ActionRowBuilder()
-        //     .addComponents(btn_trend,btn_match,btn_link);
-
-        // // Result
-        // await interaction.reply({embeds: [embed_obj], components: [btn_component]});
+                console.log(interaction.client.userData);
+            } catch (error){
+                console.log(error);
+            }
+        }, 5000);
     }
 };

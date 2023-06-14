@@ -2,9 +2,14 @@ const cheerio = require('cheerio');
 const { axiosCrolling, playwrightCrolling } = require('./crollring');
 
 // --------------------------------------------------------------
+//  # 유저 데이터
+// --------------------------------------------------------------
+let USERID = '';
+
+// --------------------------------------------------------------
 //  # 유저 정보
 // --------------------------------------------------------------
-const userData = async username => {
+const userInfo = async username => {
     // Val
     let search_stat = false;
     const result = {error: 0, data: {}};
@@ -49,6 +54,9 @@ const userData = async username => {
             result.data.clan_id     = clan_id;
             result.data.clan_name   = $item.eq(6).find('a>b').text().trim();
             result.data.clan_cert   = $item.eq(6).find('a>b').find('img').attr('src');
+
+            // 전역변수에 아이디값 담기
+            USERID                  = user_id;
         }
     });
 
@@ -67,6 +75,9 @@ const userData = async username => {
 const userBarracksData = async userid => {
     // Val
     const result = {error: 0, data: {}};
+
+    // Init
+    userid = userid ? userid : USERID;
 
     // Check
     if( !userid ){
@@ -100,20 +111,24 @@ const userBarracksData = async userid => {
 // --------------------------------------------------------------
 //  # 유저 최근동향
 // --------------------------------------------------------------
-const userTrendData = resource => {
+const userTrendData = userid => {
     // Val
-    const result = {};
+    const result = {error: 0, data: []};
+
+    // Init
+    userid = userid ? userid : USERID;
+    console.log(userid);
 
     // Data
-    const $ = cheerio.load(resource);
-    const $summaries = $(".summaries").find("p.name").next('ul');
-    const $summaries_child = $summaries.find(".child");
+    // const $ = cheerio.load(resource);
+    // const $summaries = $(".summaries").find("p.name").next('ul');
+    // const $summaries_child = $summaries.find(".child");
 
     // Process
-    result.odd = $summaries.children("li").eq(0).children(".value").text().trim();
-    result.kda = $summaries.children("li").eq(1).children(".value").text().trim();
-    result.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
-    result.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
+    // result.odd = $summaries.children("li").eq(0).children(".value").text().trim();
+    // result.kda = $summaries.children("li").eq(1).children(".value").text().trim();
+    // result.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
+    // result.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
 
     // Result
     return result;
@@ -155,4 +170,4 @@ const userMatchData = resource => {
 }
 
 
-module.exports = {userData, userBarracksData};
+module.exports = {userInfo, userBarracksData};
