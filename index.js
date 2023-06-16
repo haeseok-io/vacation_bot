@@ -57,6 +57,7 @@ client.on(Events.InteractionCreate, async interaction => {
         try {
             await command.execute(interaction);
         } catch(error) {
+            console.log(error);
             if( interaction.replied || interaction.deferred ) {
                 await interaction.followUp({content: '명령어를 실행하는 도중 오류가 발생하였습니다.', ephemeral: true});
             } else {
@@ -76,15 +77,10 @@ client.on(Events.InteractionCreate, async interaction => {
         try {
             await button.execute(interaction);
         } catch(error) {
+            console.log(error);
             await interaction.reply({content: '버튼에 대한 작업을 처리 중 오류가 발생하였습니다.', ephemeral: true});
         }
     }
-});
-
-// 유저정보 관련
-client.userData = new Collection();
-client.on(Events.ChannelCreate, message => {
-    console.log('123213');
 });
 
 // 봇 실행

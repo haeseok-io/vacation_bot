@@ -74,10 +74,7 @@ const userInfo = async username => {
 // --------------------------------------------------------------
 const userBarracksData = async userid => {
     // Val
-    const result = {error: 0, data: {}};
-
-    // Init
-    userid = userid ? userid : USERID;
+    const result = {error: 0, data: ''};
 
     // Check
     if( !userid ){
@@ -94,41 +91,49 @@ const userBarracksData = async userid => {
     }
 
     // Process
-    const resource = croll_data.data;
-
-    // ... 최근동향
-    const summaries_data = userTrendData(resource);
-
-    // ... 최근매치
-    const match_data = userMatchData(resource);
+    result.data = croll_data.data;
 
     // Result
-    result.data.summaries = summaries_data;
-    result.data.match = match_data;
     return result;
 }
 
 // --------------------------------------------------------------
 //  # 유저 최근동향
 // --------------------------------------------------------------
-const userTrendData = userid => {
+const userTrendData = async userid => {
     // Val
-    const result = {error: 0, data: []};
+    const result = {error: 0, data: {}, format: []};
 
-    // Init
-    userid = userid ? userid : USERID;
-    console.log(userid);
+    // Check
+    if( !userid ){
+        result.error = "전달 데이터 오류입니다.";
+        return result;
+    }
 
     // Data
-    // const $ = cheerio.load(resource);
-    // const $summaries = $(".summaries").find("p.name").next('ul');
-    // const $summaries_child = $summaries.find(".child");
+    // ... 유저 병영 페이지 크롤링 정보
+    const html_data = await userBarracksData(userid);
 
     // Process
-    // result.odd = $summaries.children("li").eq(0).children(".value").text().trim();
-    // result.kda = $summaries.children("li").eq(1).children(".value").text().trim();
-    // result.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
-    // result.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
+    const $ = cheerio.load(html_data.data);
+    const $summaries = $(".summaries").find("p.name").next('ul');
+    const $summaries_child = $summaries.find(".child");
+
+    result.data.odd = $summaries.children("li").eq(0).children(".value").text().trim();
+    result.data.kda = $summaries.children("li").eq(1).children(".value").text().trim();
+    result.data.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
+    result.data.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
+
+    // Etc
+    // ... embed용 데이터
+    result.format = [
+        {name: '\u2009', value: '\u2009'},
+        {name: '📌 최근동향 📌', value: '병영수첩 페이지에서 확인되는 정보 입니다.'},
+        {name: '\u2009', value: '\u2009'},
+        {name: '승률', value: `${result.data.odd}%`},
+        {name: 'kda', value: `${result.data.kda}%`, inline: true},
+        {name: '라플', value: '12'},
+    ];
 
     // Result
     return result;
@@ -170,4 +175,4 @@ const userMatchData = resource => {
 }
 
 
-module.exports = {userInfo, userBarracksData};
+module.exports = {userInfo, userTrendData};

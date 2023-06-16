@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const userData = require("../modules/userData");
+const database = require("../modules/database");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,8 +42,6 @@ module.exports = {
             return;
         }
         
-        interaction.client.userData.set(interaction.id, {id: user_data.id, name: user_data.name});
-
         // --------------------------------------------------------------
         //  # Process
         // --------------------------------------------------------------
@@ -52,8 +51,10 @@ module.exports = {
         user_embed.setTitle(`${user_data.name}`);
         user_embed.setURL(`https://barracks.sa.nexon.com/${user_data.id}/match`);
         user_embed.setThumbnail(user_data.class_img);
-        user_embed.setFooter({text: `서든어택 공식 홈페이지에서 조회되는 데이터 입니다.\n\n📌 해당 메세지는 xx분 뒤 자동으로 지워집니다. 📌`});
+        user_embed.setFooter({text: `서든어택 공식 홈페이지에서 조회되는 데이터 입니다.`});
         user_embed.addFields(
+            {name: '\u2009', value: '\u2009'},
+            {name: '📌 통합정보 📌', value: '통합검색 페이지에서 확인되는 정보 입니다.'},
             {name: '\u2009', value: '\u2009'},
             {name: '랭킹', value: user_data.rank},
             {name: '전적', value: user_data.record},
@@ -68,10 +69,8 @@ module.exports = {
             user_embed.setAuthor(clan_obj);
         }
 
-        // --------------------------------------------------------------
-        //  # Etc
-        // --------------------------------------------------------------
-        // 최근동향 버튼
+        // 하단 Button
+        // ... 최근동향 버튼
         const btn_trend = new ButtonBuilder({
             style: ButtonStyle.Secondary,
             label: '최근동향',
@@ -79,25 +78,20 @@ module.exports = {
             emoji: '🎯',
         });
 
-
-        // 컴포넌트 생성
+        // ... 버튼 컴포넌트 생성
         const btn_component = new ActionRowBuilder()
             .addComponents(btn_trend);
 
         // --------------------------------------------------------------
+        //  # Etc
+        // --------------------------------------------------------------
+        // 발송된 메세지에 대한 로그 저장
+        const sql = `Insert Into user_search_log (user, name, match_id, match_name, message_key, date) Values ('${interaction.user.id}', '${interaction.user.username}', '${user_data.id}', '${user_data.name}', '${interaction.id}', now())`;
+        const rs = await database.dbQuery(sql);
+
+        // --------------------------------------------------------------
         //  # Result
         // --------------------------------------------------------------
-        const send_msg = await interaction.editReply({content: '', embeds: [user_embed], components: [btn_component]});
-        
-        setTimeout(async () => {
-            try {
-                await send_msg.delete();
-                interaction.client.userData.delete(interaction.id);
-
-                console.log(interaction.client.userData);
-            } catch (error){
-                console.log(error);
-            }
-        }, 5000);
+        await interaction.editReply({content: '', embeds: [user_embed], components: [btn_component]});
     }
 };
