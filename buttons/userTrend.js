@@ -7,9 +7,21 @@ module.exports = {
     execute: async interaction => {
         // Val
 
+        // Init
         await interaction.deferUpdate();
 
         // Data
+        // ... 유저정보
+        const user_embed = new EmbedBuilder(interaction.message.embeds[0]);
+
+        // ... 로딩
+        const loading_embed = new EmbedBuilder();
+        loading_embed.setColor('#ffff00');
+        loading_embed.setTitle('👾 최근동향 정보를 가져오는 중 입니다...');
+
+        await interaction.editReply({embeds: [user_embed, loading_embed]});
+
+        // Process
         // ... 부모메세지 정보 가져오기
         const sql = `Select * From user_search_log Where message_key='${interaction.message.interaction.id}'`;
         const data = await database.dbData(sql);
@@ -21,23 +33,13 @@ module.exports = {
             return;
         }
 
-        // Process
-        // ... 부모메세지 정보 변경
-        const user_embed = new EmbedBuilder(interaction.message.embeds[0]);
-        user_embed.data.fields = get_data.format;
+        // Etc
+        const trend_embed = new EmbedBuilder();
+        trend_embed.setColor('#ff0000');
+        trend_embed.setTitle(`🔥 최근동향`);
+        trend_embed.addFields(get_data.format);
 
-
-        // console.log(user_embed);
-
-        // user_embed.addFields(
-            // {name: '최근전적', value: '최근전적 데이터 노출'}
-        // );
-
-
-        // console.log(user_embed);
-        // user_embed.setTitle("테스트");
-
-        await interaction.editReply({embeds: [user_embed]});
-        // interaction.update({content: 'test', embeds: [user_embed]});
+        // Result
+        await interaction.editReply({embeds: [user_embed, trend_embed]});
     }
 }

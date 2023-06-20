@@ -12,7 +12,7 @@ let USERID = '';
 const userInfo = async username => {
     // Val
     let search_stat = false;
-    const result = {error: 0, data: {}};
+    const result = {error: 0, data: {}, format: ''};
 
     // Data
     const croll_url = `https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch=${username}`;
@@ -64,6 +64,15 @@ const userInfo = async username => {
         result.error = "입력하신 닉네임은 통합검색에서 검색되지 않습니다.";
         return result;
     }
+
+    // Etc
+    result.format = [
+        {name: '\u2009', value: '\u2009'},
+        {name: '승률', value: `${result.data.odd}%`},
+        {name: 'kda', value: `${result.data.kda}%`},
+        {name: '라플', value: `${result.data.rifle}%`},
+        {name: '스나', value: `${result.data.sniper}%`}
+    ];
 
     // Result
     return result;
@@ -128,11 +137,11 @@ const userTrendData = async userid => {
     // ... embed용 데이터
     result.format = [
         {name: '\u2009', value: '\u2009'},
-        {name: '📌 최근동향 📌', value: '병영수첩 페이지에서 확인되는 정보 입니다.'},
-        {name: '\u2009', value: '\u2009'},
-        {name: '승률', value: `${result.data.odd}%`},
+        {name: '승률', value: `${result.data.odd}%`, inline: true},
         {name: 'kda', value: `${result.data.kda}%`, inline: true},
-        {name: '라플', value: '12'},
+        {name: '\u2009', value: '\u2009'},
+        {name: '라플', value: `${result.data.rifle}%`, inline: true},
+        {name: '스나', value: `${result.data.sniper}%`, inline: true}
     ];
 
     // Result

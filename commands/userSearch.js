@@ -53,14 +53,22 @@ module.exports = {
         user_embed.setThumbnail(user_data.class_img);
         user_embed.setFooter({text: `서든어택 공식 홈페이지에서 조회되는 데이터 입니다.`});
         user_embed.addFields(
+            // {name: '닉네임', value: user_data.name},
             {name: '\u2009', value: '\u2009'},
-            {name: '📌 통합정보 📌', value: '통합검색 페이지에서 확인되는 정보 입니다.'},
+            {name: '랭킹', value: user_data.rank, inline: true},
+            {name: '고유ID', value: user_data.id, inline: true},
             {name: '\u2009', value: '\u2009'},
-            {name: '랭킹', value: user_data.rank},
-            {name: '전적', value: user_data.record},
-            {name: '승률', value: user_data.odd, inline: true},
-            {name: 'kda', value: user_data.kda, inline: true},
-            {name: '\u2009', value: '\u2009'},
+
+
+            // {name: '\u2009', value: '\u2009'},
+            // {name: '📋 통합정보', value: `\u2009`},
+            // {name: '\u2009', value: `> **랭킹**\n> ${user_data.rank}`},
+            // {name: '\u2009', value: '\u2009'},
+            // {name: '> 랭킹', value: `> ${user_data.rank}`},
+            // {name: '\u2009', value: `> **전적**\n> ${user_data.record}`},
+            // {name: '승률', value: user_data.odd, inline: true},
+            // {name: 'kda', value: user_data.kda, inline: true},
+            // {name: '\u2009', value: '\u2009'},
         );
 
         if( user_data.clan_name || user_data.clan_cert ){
@@ -75,12 +83,20 @@ module.exports = {
             style: ButtonStyle.Secondary,
             label: '최근동향',
             custom_id: 'userTrend',
-            emoji: '🎯',
+            emoji: '🔥',
         });
+
+        // ... 최근 매치기록 버튼
+        const btn_match = new ButtonBuilder({
+            style: ButtonStyle.Secondary,
+            label: '최근 매치기록',
+            custom_id: 'userMatch',
+            emoji: '📋'
+        })
 
         // ... 버튼 컴포넌트 생성
         const btn_component = new ActionRowBuilder()
-            .addComponents(btn_trend);
+            .addComponents(btn_trend, btn_match);
 
         // --------------------------------------------------------------
         //  # Etc

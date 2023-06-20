@@ -90,7 +90,7 @@ client.once(Events.ClientReady, c => {
     // 참고: https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType#Listening
     client.user.setActivity({
         type: ActivityType.Playing,
-        name: '동우 욕',
+        name: '개발',
     });
 });
 
