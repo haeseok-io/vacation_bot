@@ -17,7 +17,6 @@ const userInfo = async username => {
     // Data
     const croll_url = `https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch=${username}`;
     const croll_data = await axiosCrolling(croll_url);
-
     if( croll_data.error ){
         result.error = croll_data.error;
         return result;
@@ -133,17 +132,6 @@ const userTrendData = async userid => {
     result.data.rifle = $summaries_child.find("li").eq(0).children(".value").text().trim();
     result.data.sniper = $summaries_child.find("li").eq(1).children(".value").text().trim();
 
-    // Etc
-    // ... embed용 데이터
-    result.format = [
-        {name: '\u2009', value: '\u2009'},
-        {name: '승률', value: `${result.data.odd}%`, inline: true},
-        {name: 'kda', value: `${result.data.kda}%`, inline: true},
-        {name: '\u2009', value: '\u2009'},
-        {name: '라플', value: `${result.data.rifle}%`, inline: true},
-        {name: '스나', value: `${result.data.sniper}%`, inline: true}
-    ];
-
     // Result
     return result;
 }
@@ -151,14 +139,22 @@ const userTrendData = async userid => {
 // --------------------------------------------------------------
 //  # 유저 최근매치
 // --------------------------------------------------------------
-const userMatchData = resource => {
+const userMatchData = userid => {
     // Val
-    const result = [];
+    const result = {error: 0, data: [], format: {}};
+
+    // Check
+    if( !userid ){
+        result.error = "전달 데이터 오류입니다.";
+        return result;
+    }
 
     // Data
-    const $ = cheerio.load(resource);
+    // ... 유저 병영 페이지 크롤링 정보
+    const html_data = await userBarracksData(userid);
 
     // Process
+    const $ = cheerio.load(resource);
     $(".histories .history").each((dex, element)=>{
         const obj = {};
         const $list = $(element);
@@ -176,7 +172,7 @@ const userMatchData = resource => {
         obj.assist = $item.find("li").eq(8).find(".value").text().trim();
 
         // 배열담기
-        result.push(obj);
+        result.data.push(obj);
     });
 
     // Result
