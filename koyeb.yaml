@@ -1,8 +1,0 @@
-name: vacation-bot
-version: 1
-containers:
-  - name: node
-    image: node:lts
-    command:
-      - node
-      - index.js
