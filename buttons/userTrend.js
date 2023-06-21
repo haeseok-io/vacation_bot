@@ -3,13 +3,13 @@ const database = require('../modules/database');
 const userData = require("../modules/userData");
 const embedTpl = require('../modules/embedTpl');
 
+const prefix = 'userTrend';
 module.exports = {
-    customId: 'userTrend',
+    customId: prefix,
     data: new ButtonBuilder({
-        custom_id: this.customId,
+        custom_id: prefix,
         style: ButtonStyle.Secondary,
         label: '최근동향',
-        emoji: '🔥',
     }),
     execute: async interaction => {
         // --------------------------------------------------------------
@@ -24,7 +24,7 @@ module.exports = {
         await interaction.deferUpdate();
 
         // 로딩 Embed 노출
-        const loading_embed = embedTpl.loadingEmbed(`${user_name} 최근동향 정보를 가져오는 중 입니다...`);
+        const loading_embed = embedTpl.loadingEmbed(`최근동향 조회중...`);
         await interaction.editReply({content: '', embeds: [user_embed, loading_embed]});
 
         // --------------------------------------------------------------

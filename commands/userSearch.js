@@ -2,8 +2,6 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder } = require('discord
 const database = require("../modules/database");
 const userData = require("../modules/userData");
 const embedTpl = require('../modules/embedTpl');
-const userTrendBtn = require('../buttons/userTrend');
-const userMatchBtn = require('../buttons/userMatch');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -44,7 +42,7 @@ module.exports = {
         const user_info = await userData.userInfo(user_name);
         const user_data = user_info.data;
         if( user_info.error ){
-            interaction.editReply(user_info.error);
+            interaction.editReply({content: user_info.error, embeds: []});
             return;
         }
 
@@ -53,13 +51,12 @@ module.exports = {
         
         // 버튼
         // ... 최근동향
-        const trend_btn = userTrendBtn.data;
-        const match_btn = userMatchBtn.data;
+        const trend_btn = require('../buttons/userTrend').data;
+        const match_btn = require('../buttons/userMatch').data;
+        const bad_btn = require('../buttons/userBadWrite').data;
 
         // ... 컴포넌트 생성
-        const button_component = new ActionRowBuilder({
-            components: [trend_btn, match_btn]
-        });
+        const button_component = new ActionRowBuilder().addComponents(trend_btn, match_btn, bad_btn);
 
         // --------------------------------------------------------------
         //  # Etc

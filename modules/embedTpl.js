@@ -1,9 +1,9 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, Embed } = require('discord.js');
 
 // --------------------------------------------------------------
 //  # 로딩
 // --------------------------------------------------------------
-export const loadingEmbed = msg => {
+const loadingEmbed = msg => {
     // Val
     const embed = new EmbedBuilder();
 
@@ -21,7 +21,7 @@ export const loadingEmbed = msg => {
 // --------------------------------------------------------------
 //  # 유저 정보 (통합)
 // --------------------------------------------------------------
-export const userInfoEmbed = (user_id, user_name, classes, user_rank, clan_name, clan_cert) => {
+const userInfoEmbed = (user_id, user_name, classes, user_rank, clan_name, clan_cert) => {
     // Val
     const embed = new EmbedBuilder();
 
@@ -31,6 +31,8 @@ export const userInfoEmbed = (user_id, user_name, classes, user_rank, clan_name,
     }
 
     // Data
+
+    // Process
     embed.setColor('#00aaea');
     embed.setTitle(user_name)
     embed.setURL(`https://barracks.sa.nexon.com/${user_id}/match`);
@@ -42,12 +44,12 @@ export const userInfoEmbed = (user_id, user_name, classes, user_rank, clan_name,
         const clan_obj = {name: clan_name};
         
         if( clan_cert ){
-            clan_obj.iconURL(clan_cert);
+            clan_obj.iconURL = clan_cert;
         }
 
         embed.setAuthor(clan_obj);
     }
-
+    
     embed.addFields(
         {name: '\u2009', value: '\u2009'},
         {name: '랭킹', value: user_rank, inline: true},
@@ -62,13 +64,16 @@ export const userInfoEmbed = (user_id, user_name, classes, user_rank, clan_name,
 // --------------------------------------------------------------
 //  # 유저 최근 동향
 // --------------------------------------------------------------
-export const userTrendEmbed = (odd, kda, rifle, sniper) => {
+const userTrendEmbed = (odd, kda, rifle, sniper) => {
     // Val
     const embed = new EmbedBuilder();
 
     // Check
+    if( !odd || !kda || !rifle || !sniper ){
+        return;
+    }
 
-    // Data
+    // Process
     embed.setColor('#379c6f');
     embed.setAuthor({name: '🔥 최근동향'});
     embed.addFields(
@@ -82,3 +87,34 @@ export const userTrendEmbed = (odd, kda, rifle, sniper) => {
     // Result
     return embed;
 };
+
+// --------------------------------------------------------------
+//  # 유저 최근 매치
+// --------------------------------------------------------------
+const userMatchEmbed = match_data => {
+    // Val
+    const embed = new EmbedBuilder();
+
+    // Check
+    if( !match_data ){
+        return;
+    }
+
+    // Data
+    const embed_data = [];
+    match_data.forEach((data) => {
+        embed_data.push({
+            name: `\`${data.stat}\` ${data.map} (${data.date}) \`${data.type}\` `,
+            value: `> 킬: ${data.kill} / 데스: ${data.death} / 어시: ${data.assist} / 헤드: ${data.head} / 데미지: ${data.damage}`});
+    });
+
+    // Process
+    embed.setColor('#379c6f');
+    embed.setAuthor({name: '📋 최근 매치기록'});
+    embed.addFields(embed_data);
+    
+    // Result
+    return embed;
+}
+
+module.exports = {loadingEmbed, userInfoEmbed, userTrendEmbed, userMatchEmbed};

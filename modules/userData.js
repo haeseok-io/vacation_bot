@@ -2,17 +2,12 @@ const cheerio = require('cheerio');
 const { axiosCrolling, playwrightCrolling } = require('./crollring');
 
 // --------------------------------------------------------------
-//  # 유저 데이터
-// --------------------------------------------------------------
-let USERID = '';
-
-// --------------------------------------------------------------
 //  # 유저 정보
 // --------------------------------------------------------------
 const userInfo = async username => {
     // Val
     let search_stat = false;
-    const result = {error: 0, data: {}, format: ''};
+    const result = {error: 0, data: {}};
 
     // Data
     const croll_url = `https://sa.nexon.com/ranking/total/ranklist.aspx?strSearch=${username}`;
@@ -53,9 +48,6 @@ const userInfo = async username => {
             result.data.clan_id     = clan_id;
             result.data.clan_name   = $item.eq(6).find('a>b').text().trim();
             result.data.clan_cert   = $item.eq(6).find('a>b').find('img').attr('src');
-
-            // 전역변수에 아이디값 담기
-            USERID                  = user_id;
         }
     });
 
@@ -63,15 +55,6 @@ const userInfo = async username => {
         result.error = "입력하신 닉네임은 통합검색에서 검색되지 않습니다.";
         return result;
     }
-
-    // Etc
-    result.format = [
-        {name: '\u2009', value: '\u2009'},
-        {name: '승률', value: `${result.data.odd}%`},
-        {name: 'kda', value: `${result.data.kda}%`},
-        {name: '라플', value: `${result.data.rifle}%`},
-        {name: '스나', value: `${result.data.sniper}%`}
-    ];
 
     // Result
     return result;
@@ -139,9 +122,9 @@ const userTrendData = async userid => {
 // --------------------------------------------------------------
 //  # 유저 최근매치
 // --------------------------------------------------------------
-const userMatchData = userid => {
+const userMatchData = async userid => {
     // Val
-    const result = {error: 0, data: [], format: {}};
+    const result = {error: 0, data: []};
 
     // Check
     if( !userid ){
@@ -154,7 +137,7 @@ const userMatchData = userid => {
     const html_data = await userBarracksData(userid);
 
     // Process
-    const $ = cheerio.load(resource);
+    const $ = cheerio.load(html_data.data);
     $(".histories .history").each((dex, element)=>{
         const obj = {};
         const $list = $(element);
@@ -180,4 +163,4 @@ const userMatchData = userid => {
 }
 
 
-module.exports = {userInfo, userTrendData};
+module.exports = {userInfo, userTrendData, userMatchData};
