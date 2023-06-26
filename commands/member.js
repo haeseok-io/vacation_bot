@@ -1,10 +1,11 @@
 const { SlashCommandBuilder, EmbedBuilder, Embed } = require('discord.js');
-const puppeteer = require('puppeteer');
+const { axiosCrolling, playwrightCrolling } = require('../modules/crollring');
 const cheerio = require('cheerio');
+const embedTpl = require('../modules/embedTpl');
 
 const crolling_obj = {
     href: "https://barracks.sa.nexon.com/clan/rankblock/clanMatch",
-    select_path: '.simplebar-content ul li',
+    select_path: '',
 };
 
 module.exports = {
@@ -12,22 +13,39 @@ module.exports = {
         .setName('클랜원목록')
         .setDescription('현재 클랜원 정보를 알려줘요!'),
     async execute(interaction){
-        // 데이터 가져오기
-        const start = console.time();
-        const browser = await puppeteer.launch({headless: "new"});
-        const page = await browser.newPage();
-
-        await page.goto(crolling_obj.href);
-        const content = await page.content();
-
-        await page.close();
-        await browser.close();
-
-        // 데이터 수집
-        const $ = cheerio.load(content);
+        // --------------------------------------------------------------
+        //  # Init
+        // --------------------------------------------------------------
         const user_info = [];
+        let data_list = '';
+        let data_online = 0;
 
-        $(crolling_obj.select_path).each(function(dex, element){
+        // --------------------------------------------------------------
+        //  # Init
+        // --------------------------------------------------------------
+        await interaction.deferReply();
+
+        // 로딩 Embed 노출
+        const loading_embed = embedTpl.loadingEmbed(`휴가 클랜원 정보 조회중...`);
+        await interaction.editReply({content: '', embeds: [loading_embed]});
+
+        // --------------------------------------------------------------
+        //  # Data
+        // --------------------------------------------------------------
+        // 클랜원 정보 가져오기
+        const clan_url = `https://barracks.sa.nexon.com/clan/rankblock/clanMatch`;
+        const clan_data = await playwrightCrolling(clan_url);
+        if( !clan_data.data ){
+            result.error = "클랜원 정보를 가져오는데 실패했습니다.";
+            return result;
+        }
+
+        // --------------------------------------------------------------
+        //  # Process
+        // --------------------------------------------------------------
+        // 클랜원 정보 가공
+        const $ = cheerio.load(clan_data.data);
+        $('.simplebar-content ul li').each(function(dex, element){
             // Val
             const $data = $(element);
             const $item = $data.find(".user-info");
@@ -41,15 +59,11 @@ module.exports = {
             user_info.push({name: user_name, duty: user_duty, online: user_online});
         });
 
-        // 데이터 정렬
-        // - 클랜 직책순으로 정렬
+        // 직책순으로 정렬
         const sort_arr = ['클랜마스터', '부마스터', '운영진', '열혈클랜원', '건설가', '클랜원'];
         const sort_data = user_info.sort((a,b) => sort_arr.indexOf(a.duty)-sort_arr.indexOf(b.duty));
-        
-        // 데이터 가공
-        let data_list = '';
-        let data_online = 0;
 
+        // 데이터 가공
         sort_data.forEach((data)=>{
             if( data_list ) data_list += "\n";
             data_list += "- "+data.name+" ("+data.duty+")";
@@ -60,7 +74,9 @@ module.exports = {
             }
         });
 
-        // 디스코드 전송용 포맷 만들기
+        // --------------------------------------------------------------
+        //  # Etc
+        // --------------------------------------------------------------
         const embed_obj = new EmbedBuilder()
             .setColor(0x0099FF)
             .setTitle('휴가 클랜 클랜원 목록')
@@ -71,8 +87,10 @@ module.exports = {
                 {name: '🌵 클랜원 상세정보', value: data_list}
             );
 
-        // 발송
-        const end = console.timeEnd();
-        await interaction.reply({embeds: [embed_obj]});
+
+        // --------------------------------------------------------------
+        //  # Result
+        // --------------------------------------------------------------
+        await interaction.editReply({content: '', embeds: [embed_obj]});
     }
 };
