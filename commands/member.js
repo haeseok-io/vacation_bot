@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, Embed } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { axiosCrolling, playwrightCrolling } = require('../modules/crollring');
 const cheerio = require('cheerio');
 const embedTpl = require('../modules/embedTpl');

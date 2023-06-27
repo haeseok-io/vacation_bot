@@ -1,7 +1,9 @@
 const { ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const database = require('../modules/database');
-const userData = require("../modules/userData");
 const embedTpl = require('../modules/embedTpl');
+
+const userData = require('../modules/user/userData');
+const userEmbed = require('../modules/user/userEmbed');
 
 const prefix = 'userMatch';
 module.exports = {
@@ -43,7 +45,7 @@ module.exports = {
 
         // 유저 최근동향 Embed
         const match_data = get_data.data;
-        const match_embed = embedTpl.userMatchEmbed(match_data);
+        const match_embed = await userEmbed.userMatchEmbed(match_data);
 
         // --------------------------------------------------------------
         //  # Result

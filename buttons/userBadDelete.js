@@ -7,13 +7,13 @@ const userEmbed = require('../modules/user/userEmbed');
 const userButton = require('../modules/user/userButton');
 
 
-const prefix = 'userBadWrite';
+const prefix = 'userBadDelete';
 module.exports = {
     customId: prefix,
     data: new ButtonBuilder({
         custom_id: prefix,
-        style: ButtonStyle.Danger,
-        label: '핵/비매너 등록',
+        style: ButtonStyle.Primary,
+        label: '핵/비매너 해제',
     }),
     execute: async interaction => {
         // --------------------------------------------------------------
@@ -27,7 +27,7 @@ module.exports = {
         await interaction.deferUpdate();
 
         // 로딩 Embed 노출
-        const loading_embed = embedTpl.loadingEmbed(`핵/비매너 유저 등록중...`);
+        const loading_embed = embedTpl.loadingEmbed(`핵/비매너 유저 해제중...`);
         await interaction.editReply({content: '', embeds: [user_embed, loading_embed]});
         
         // --------------------------------------------------------------
@@ -45,12 +45,12 @@ module.exports = {
         //  # Process
         // --------------------------------------------------------------
         // 비매너 유저 등록
-        if( !bad_data ){
-            const write_sql = `Insert Into user_bad_manners (user_id, user_name, date) Values ('${log_data.match_id}', '${log_data.match_name}', now())`;
-            const write_rs = await database.dbQuery(write_sql);
+        if( bad_data ){
+            const delete_sql = `Delete From user_bad_manners Where user_id='${log_data.match_id}'`; 
+            const delete_rs = await database.dbQuery(delete_sql);
 
-            user_embed.setColor('#ff0000');
-            user_embed.setFooter({text: '🚨 비매너 유저 입니다. 🚨'});
+            user_embed.setColor('#00aaea');
+            user_embed.data.footer = undefined;
         }
 
         // --------------------------------------------------------------

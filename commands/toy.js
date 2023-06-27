@@ -45,7 +45,7 @@ module.exports = {
         // --------------------------------------------------------------
         const embed = new EmbedBuilder();
         embed.setColor('#ffffff');
-        embed.setTitle('test');
+        embed.setTitle('유동우는 피파도모대 서든도모대 롤체도모대 다모대');
 
         console.log(user_data);
 

@@ -1,7 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const database = require("../modules/database");
-const userData = require("../modules/userData");
 const embedTpl = require('../modules/embedTpl');
+
+const userData = require('../modules/user/userData');
+const userEmbed = require('../modules/user/userEmbed');
+const userButton = require('../modules/user/userButton');
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -38,30 +42,24 @@ module.exports = {
         // --------------------------------------------------------------
         //  # Data
         // --------------------------------------------------------------
-        // 유저정보 가져오기
-        const user_info = await userData.userInfo(user_name);
-        const user_data = user_info.data;
-        if( user_info.error ){
-            interaction.editReply({content: user_info.error, embeds: []});
+        // 유저정보 데이터 추출
+        const get_user_data = await userData.userInfoData(user_name);
+        const user_data = get_user_data.data;
+        if( get_user_data.error ){
+            interaction.editReply({content: get_user_data.error, embeds: []});
             return;
         }
 
         // 유저정보 Embed
-        const user_embed = embedTpl.userInfoEmbed(user_data.id, user_data.name, user_data.class_img, user_data.rank, user_data.clan_name, user_data.clan_cert);
+        const user_embed = await userEmbed.userInfoEmbed(user_data);
         
-        // 버튼
-        // ... 최근동향
-        const trend_btn = require('../buttons/userTrend').data;
-        const match_btn = require('../buttons/userMatch').data;
-        const bad_btn = require('../buttons/userBadWrite').data;
-
-        // ... 컴포넌트 생성
-        const button_component = new ActionRowBuilder().addComponents(trend_btn, match_btn, bad_btn);
+        // 유저정보 Button
+        const button_component = await userButton.userSearchButton(user_data.id);
 
         // --------------------------------------------------------------
         //  # Etc
         // --------------------------------------------------------------
-        // DB에 검색 로그 저장
+        // 로그저장
         const sql = `Insert Into user_search_log (user, name, match_id, match_name, message_key, date) Values ('${interaction.user.id}', '${interaction.user.username}', '${user_data.id}', '${user_data.name}', '${interaction.id}', now())`;
         const rs = await database.dbQuery(sql);
 

@@ -1,7 +1,8 @@
 const { ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const database = require('../modules/database');
-const userData = require("../modules/userData");
 const embedTpl = require('../modules/embedTpl');
+const userData = require('../modules/user/userData');
+const userEmbed = require('../modules/user/userEmbed');
 
 const prefix = 'userTrend';
 module.exports = {
@@ -43,7 +44,7 @@ module.exports = {
 
         // 유저 최근동향 Embed
         const trend_data = get_data.data;
-        const trend_embed = embedTpl.userTrendEmbed(trend_data.odd, trend_data.kda, trend_data.rifle, trend_data.sniper);
+        const trend_embed = await userEmbed.userTrendEmbed(trend_data);
 
         // --------------------------------------------------------------
         //  # Result
