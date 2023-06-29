@@ -1,11 +1,18 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { config } = require('dotenv');
-const { Client, Events, GatewayIntentBits, Collection, ActivityType } = require('discord.js');
+const { Client, Events, GatewayIntentBits, Collection, ActivityType, ChannelType } = require('discord.js');
+const { Channel } = require('node:diagnostics_channel');
+const { voiceCreate, voiceDelete } = require('./modules/voiceAutoCreate');
 config();
 
 const token = process.env.TOKEN;
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates
+    ]
+});
 
 
 // --------------------------------------------------------------
@@ -79,6 +86,38 @@ client.on(Events.InteractionCreate, async interaction => {
         } catch(error) {
             console.log(error);
             await interaction.reply({content: '버튼에 대한 작업을 처리 중 오류가 발생하였습니다.', ephemeral: true});
+        }
+    }
+});
+
+// --------------------------------------------------------------
+//  # 음성방 생성 및 삭제
+// --------------------------------------------------------------
+const voiceCollection = new Collection();
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+    // Val
+    const user = await client.users.fetch(newState.id);
+    const member = newState.guild.members.cache.get(user.id);
+
+    // Data
+    // Process
+    // ... 음성방 생성
+    const create_channel = ['1123520859240415242', '1123530903612837928'];
+    if( !oldState.channel && create_channel.indexOf(newState.channel.id)!==-1 ){
+        // 음성채팅 타이틀
+        const channel_type = create_channel.indexOf(newState.channel.id);
+        const channel_prifix = channel_type===0 ? '휴가' : '일반';
+        const channel_name = `🎧ㅣ${channel_prifix} 음성채널`;
+
+        // 음성채팅 생성
+        const channel = await voiceCreate(newState, channel_name, newState.id);
+
+        // 생성한 사용자 음성방 입장처리
+        member.voice.setChannel(channel);
+
+    } else if( !newState.channel ){
+        if( oldState.channel.members.size===0 ){
+            await voiceDelete(oldState, oldState.channel.id);
         }
     }
 });
